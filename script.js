@@ -97,7 +97,16 @@ function getSaldoMap() {
 function getSaldo(nama) { return getSaldoMap()[nama] || 0; }
 
 /* ─── ADMIN / PIN ─── */
-function isAdmin() { return sessionStorage.getItem("adminUnlocked") === "1"; }
+// Pakai localStorage + expiry 8 jam supaya tetap jalan di GitHub Pages
+function isAdmin() {
+  try {
+    const raw = localStorage.getItem("adminUnlocked");
+    if (!raw) return false;
+    const { token, exp } = JSON.parse(raw);
+    if (Date.now() > exp) { localStorage.removeItem("adminUnlocked"); return false; }
+    return token === "1";
+  } catch { return false; }
+}
 
 function applyAdminState() {
   const admin = isAdmin();
@@ -121,7 +130,7 @@ function applyAdminState() {
 function toggleAdmin() {
   if (isAdmin()) {
     if (confirm("Keluar dari mode Admin?")) {
-      sessionStorage.removeItem("adminUnlocked");
+      localStorage.removeItem("adminUnlocked");
       applyAdminState();
       tampilRiwayat();
     }
@@ -161,7 +170,11 @@ function pinDel() {
 }
 function checkPIN() {
   if (pinBuffer === ADMIN_PIN) {
-    sessionStorage.setItem("adminUnlocked", "1");
+    // Simpan dengan expiry 8 jam
+    localStorage.setItem("adminUnlocked", JSON.stringify({
+      token: "1",
+      exp: Date.now() + 8 * 60 * 60 * 1000
+    }));
     tutupModalPIN();
     applyAdminState();
     tampilRiwayat();
