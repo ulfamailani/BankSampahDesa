@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Total Tabungan Desa</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left"><span>🌱</span><span class="topbar-logo">Bank Sampah Desa</span></div>
+    <div class="topbar-right">
+      <button class="admin-badge" id="adminBadge" onclick="toggleAdmin()">👑 Admin</button>
+      <button class="btn-icon-round" id="darkModeBtn">🌙</button>
+      <button class="btn-icon-round admin-only" onclick="exportRiwayat()" title="Cetak" style="display:none;">🖨️</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="back-nav">
+      <button class="btn btn-ghost btn-sm" onclick="window.location.href='index.html'">← Kembali</button>
+    </div>
+
+    <header class="site-header">
+      <span class="leaf-icon">💰</span>
+      <h1>Total Tabungan</h1>
+      <p>Rekap kas Bank Sampah Desa</p>
+    </header>
+
+    <div class="card">
+      <div class="total-hero">
+        <div class="total-label">Total Setoran Masuk</div>
+        <div class="total-big" id="total-uang">Rp 0</div>
+        <div class="total-sub" id="total-sub">Dari 0 transaksi · 0 warga</div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Saldo aktif & total tarik — paling penting -->
+      <div class="stats-grid" style="margin-top:0;">
+        <div class="stat-box" style="border-color: var(--green-mid);">
+          <div class="stat-val" id="stat-saldo" style="color:var(--green-mid);">Rp 0</div>
+          <div class="stat-label">💳 Saldo Aktif</div>
+        </div>
+        <div class="stat-box" style="border-color: var(--red);">
+          <div class="stat-val" id="stat-tarik" style="color:var(--red);">Rp 0</div>
+          <div class="stat-label">💸 Sudah Ditarik</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Statistik lainnya -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-transaksi">0</div>
+          <div class="stat-label">Total Transaksi</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-warga">0</div>
+          <div class="stat-label">Jumlah Warga</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-terbesar" style="font-size:0.95rem;">—</div>
+          <div class="stat-label">Penyetor Terbesar</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-rata">Rp 0</div>
+          <div class="stat-label">Rata-rata/Warga</div>
+        </div>
+      </div>
+
+      <div class="stat-box" style="margin-top:10px;">
+        <div class="stat-val" id="stat-terakhir" style="font-size:0.85rem;">—</div>
+        <div class="stat-label">Transaksi Terakhir</div>
+      </div>
+    </div>
+
+    <div class="card" id="top3-card" style="display:none;">
+      <div class="card-title">🏆 Top 3 Penyetor</div>
+      <div id="top3-list"></div>
+    </div>
+  </div>
+
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="pin-modal">
+    <div class="modal-box">
+      <h3>🔑 Admin Login</h3>
+      <p>Masukkan PIN 4 digit</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinInput('1')">1</button>
+        <button class="pin-key" onclick="pinInput('2')">2</button>
+        <button class="pin-key" onclick="pinInput('3')">3</button>
+        <button class="pin-key" onclick="pinInput('4')">4</button>
+        <button class="pin-key" onclick="pinInput('5')">5</button>
+        <button class="pin-key" onclick="pinInput('6')">6</button>
+        <button class="pin-key" onclick="pinInput('7')">7</button>
+        <button class="pin-key" onclick="pinInput('8')">8</button>
+        <button class="pin-key" onclick="pinInput('9')">9</button>
+        <button class="pin-key empty"></button>
+        <button class="pin-key" onclick="pinInput('0')">0</button>
+        <button class="pin-key del" onclick="pinDel()">⌫</button>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:14px;font-size:0.82rem;" onclick="tutupModalPIN()">Batal</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Target Tabungan</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .rp-wrap { position: relative; display: flex; align-items: center; flex: 1; }
+    .rp-prefix { position: absolute; left: 11px; font-weight: 700; font-size: 0.85rem; color: var(--muted); pointer-events: none; }
+    .rp-wrap input { padding-left: 36px !important; }
+    .shortcut-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip {
+      background: var(--green-pale); color: var(--green-dark);
+      border: 1.5px solid var(--border); border-radius: 20px;
+      padding: 4px 12px; font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; font-family: 'Nunito', sans-serif;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .chip:hover { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+    .chip:active { transform: scale(0.95); }
+    .info-box {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--green-pale); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      font-size: 0.82rem; color: var(--muted); font-weight: 600;
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left"><span>🌱</span><span class="topbar-logo nama-desa">Bank Sampah Desa</span></div>
+    <div class="topbar-right">
+      <button class="admin-badge" id="adminBadge" onclick="toggleAdmin()">🔑 Admin</button>
+      <button class="btn-icon-round" id="darkModeBtn">🌙</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="back-nav">
+      <button class="btn btn-ghost btn-sm" onclick="window.location.href='index.html'">← Kembali</button>
+    </div>
+    <header class="site-header">
+      <span class="leaf-icon">🎯</span>
+      <h1>Target Tabungan</h1>
+      <p>Pantau progress warga</p>
+    </header>
+    <div class="card">
+      <div class="card-title">📊 Progress per Warga</div>
+      <div id="target-admin-info" class="info-box" style="display:none;">
+        🔒 Login sebagai Admin untuk mengubah target
+      </div>
+      <div id="target-list"></div>
+    </div>
+  </div>
+
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="pin-modal">
+    <div class="modal-box">
+      <h3>🔑 Admin Login</h3>
+      <p>Masukkan PIN 4 digit</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinInput('1')">1</button>
+        <button class="pin-key" onclick="pinInput('2')">2</button>
+        <button class="pin-key" onclick="pinInput('3')">3</button>
+        <button class="pin-key" onclick="pinInput('4')">4</button>
+        <button class="pin-key" onclick="pinInput('5')">5</button>
+        <button class="pin-key" onclick="pinInput('6')">6</button>
+        <button class="pin-key" onclick="pinInput('7')">7</button>
+        <button class="pin-key" onclick="pinInput('8')">8</button>
+        <button class="pin-key" onclick="pinInput('9')">9</button>
+        <button class="pin-key empty"></button>
+        <button class="pin-key" onclick="pinInput('0')">0</button>
+        <button class="pin-key del" onclick="pinDel()">⌫</button>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:14px;font-size:0.82rem;" onclick="tutupModalPIN()">Batal</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const SHORTCUTS = [
+      { label: "5rb",   val: 5000 },
+      { label: "10rb",  val: 10000 },
+      { label: "25rb",  val: 25000 },
+      { label: "50rb",  val: 50000 },
+      { label: "100rb", val: 100000 },
+      { label: "250rb", val: 250000 },
+      { label: "500rb", val: 500000 },
+      { label: "1jt",   val: 1000000 },
+    ];
+
+    function formatInputRupiah(el) {
+      const raw = el.value.replace(/\D/g, "");
+      el.value = raw ? parseInt(raw).toLocaleString("id-ID") : "";
+    }
+
+    function setChip(id, value) {
+      const el = document.getElementById(id);
+      if (el) { el.value = value.toLocaleString("id-ID"); el.focus(); }
+    }
+
+    function simpanTargetBaru(nama, inputId) {
+      if (!isAdmin()) { showToast("🔒 Login sebagai Admin dulu", "error"); return; }
+      const el = document.getElementById(inputId);
+      const raw = el.value.replace(/\D/g, "");
+      const val = parseFloat(raw);
+      if (isNaN(val) || val <= 0) { showToast("⚠️ Masukkan jumlah yang valid", "error"); return; }
+      const targets = getTarget();
+      targets[nama] = val;
+      saveTarget(targets);
+      showToast(`🎯 Target ${nama} disimpan`);
+      renderTarget();
+    }
+
+    function renderTarget() {
+      const container = document.getElementById("target-list");
+      const saldoMap = getSaldoMap();
+      const targets = getTarget();
+      const allNames = [...new Set([...Object.keys(saldoMap), ...Object.keys(targets)])];
+      const admin = isAdmin();
+
+      const infoBox = document.getElementById("target-admin-info");
+      if (infoBox) infoBox.style.display = admin ? "none" : "flex";
+
+      if (allNames.length === 0) {
+        container.innerHTML = `<div class="empty-state"><span class="empty-icon">🎯</span>Belum ada warga terdaftar</div>`;
+        return;
+      }
+
+      container.innerHTML = allNames.map((nama, idx) => {
+        const saldo  = saldoMap[nama] || 0;
+        const target = targets[nama]  || 0;
+        const pct    = target > 0 ? Math.min(100, Math.round((saldo / target) * 100)) : 0;
+        const done   = target > 0 && saldo >= target;
+        const inputId = "ti-" + idx;
+        const chips = SHORTCUTS.map(s =>
+          `<span class="chip" onclick="setChip('${inputId}', ${s.val})">${s.label}</span>`
+        ).join("");
+
+        return `
+          <div class="target-item">
+            <div class="target-header">
+              <span class="target-name">${nama}${done ? " ✅" : ""}</span>
+              <span class="target-pct">${target > 0 ? pct + "%" : "—"}</span>
+            </div>
+            <div class="target-amounts">
+              <span>${formatRupiah(saldo)}</span>
+              ${target > 0 ? `<span class="target-of">/ ${formatRupiah(target)}</span>` : `<span class="target-of">belum ada target</span>`}
+            </div>
+            ${target > 0 ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` : ""}
+            ${admin ? `
+            <div class="target-input-row" style="margin-top:10px;">
+              <div class="rp-wrap">
+                <span class="rp-prefix">Rp</span>
+                <input type="text" inputmode="numeric" class="target-input" id="${inputId}"
+                  placeholder="0" value="${target > 0 ? target.toLocaleString("id-ID") : ""}"
+                  oninput="formatInputRupiah(this)"
+                  onkeydown="if(event.key==='Enter') simpanTargetBaru('${nama.replace(/'/g,"\\'")}','${inputId}')">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="simpanTargetBaru('${nama.replace(/'/g,"\\'")}','${inputId}')">Simpan</button>
+            </div>
+            <div class="shortcut-chips">${chips}</div>` : ""}
+          </div>`;
+      }).join("");
+    }
+
+    // Re-render target setelah login admin
+    const _origApply2 = applyAdminState;
+    applyAdminState = function () {
+      _origApply2();
+      renderTarget();
+    };
+
+    window.onload = function () {
+      applyDarkMode();
+      initDarkMode();
+      applyAdminState();
+      applyNamaDesa();
+      initOfflineDetection();
+      document.addEventListener("keydown", handlePinKey);
+      renderTarget();
+    };
+  </script>
+</body>
+</html>

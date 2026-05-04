@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarik Tunai</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left"><span>🌱</span><span class="topbar-logo nama-desa">Bank Sampah Desa</span></div>
+    <div class="topbar-right">
+      <button class="admin-badge" id="adminBadge" onclick="toggleAdminTarik()">🔑 Admin</button>
+      <button class="btn-icon-round" id="darkModeBtn">🌙</button>
+    </div>
+  </div>
+
+  <div class="page">
+    <div class="back-nav">
+      <button class="btn btn-ghost btn-sm" onclick="window.location.href='index.html'">← Kembali</button>
+    </div>
+    <header class="site-header">
+      <span class="leaf-icon">💸</span>
+      <h1>Tarik Tunai</h1>
+      <p>Cairkan tabungan sampah warga</p>
+    </header>
+
+    <!-- Tampil kalau bukan admin -->
+    <div id="akses-ditolak" class="card" style="display:none;text-align:center;padding:32px 20px;">
+      <div style="font-size:2.5rem;margin-bottom:10px;">🔒</div>
+      <div style="font-family:'Baloo 2',cursive;font-size:1.1rem;font-weight:800;color:var(--green-dark);margin-bottom:6px;">Khusus Admin</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:20px;">Masukkan PIN Admin untuk melanjutkan.</div>
+      <button class="btn btn-primary" style="margin-bottom:10px;" onclick="bukaModalPIN()">🔑 Login Admin</button>
+      <button class="btn btn-ghost" onclick="window.location.href='index.html'">← Kembali ke Beranda</button>
+    </div>
+
+    <!-- Tampil kalau admin -->
+    <div id="konten-admin" style="display:none;width:100%;flex-direction:column;align-items:center;">
+      <div class="card" style="width:100%;max-width:440px;">
+        <div class="card-title">💳 Saldo & Penarikan</div>
+        <div id="tarik-list"></div>
+      </div>
+      <div class="card" style="width:100%;max-width:440px;">
+        <div class="card-title">📋 Riwayat Penarikan</div>
+        <div id="riwayat-tarik"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="pin-modal">
+    <div class="modal-box">
+      <h3>🔑 Admin Login</h3>
+      <p>Masukkan PIN 4 digit</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="dot-0"></div>
+        <div class="pin-dot" id="dot-1"></div>
+        <div class="pin-dot" id="dot-2"></div>
+        <div class="pin-dot" id="dot-3"></div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-pad">
+        <button class="pin-key" onclick="pinInput('1')">1</button>
+        <button class="pin-key" onclick="pinInput('2')">2</button>
+        <button class="pin-key" onclick="pinInput('3')">3</button>
+        <button class="pin-key" onclick="pinInput('4')">4</button>
+        <button class="pin-key" onclick="pinInput('5')">5</button>
+        <button class="pin-key" onclick="pinInput('6')">6</button>
+        <button class="pin-key" onclick="pinInput('7')">7</button>
+        <button class="pin-key" onclick="pinInput('8')">8</button>
+        <button class="pin-key" onclick="pinInput('9')">9</button>
+        <button class="pin-key empty"></button>
+        <button class="pin-key" onclick="pinInput('0')">0</button>
+        <button class="pin-key del" onclick="pinDel()">⌫</button>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:14px;font-size:0.82rem;" onclick="tutupModalPIN()">Batal</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    function updateTampilan() {
+      const admin = isAdmin();
+      const badge = document.getElementById("adminBadge");
+      if (badge) {
+        badge.style.display = "flex";
+        badge.textContent = admin ? "👑 Keluar Admin" : "🔑 Admin";
+        badge.style.background = admin
+          ? "linear-gradient(135deg,#e8394c,#b5202f)"
+          : "linear-gradient(135deg,#f7c948,#f0a800)";
+        badge.style.color = admin ? "white" : "#3a2600";
+      }
+
+      document.getElementById("akses-ditolak").style.display = admin ? "none" : "block";
+      document.getElementById("konten-admin").style.display = admin ? "flex" : "none";
+
+      if (admin) tampilTarikTunai();
+    }
+
+    function toggleAdminTarik() {
+      if (isAdmin()) {
+        if (confirm("Keluar dari mode Admin?")) {
+          sessionStorage.removeItem("adminUnlocked");
+          updateTampilan();
+        }
+      } else {
+        bukaModalPIN();
+      }
+    }
+
+    // Setelah PIN sukses di halaman ini, panggil updateTampilan
+    // Override checkPIN khusus halaman tarik
+    const _origCheckPIN = checkPIN;
+    checkPIN = function () {
+      const pin = pinBuffer; // simpan dulu sebelum direset
+      _origCheckPIN();
+      // Kalau sekarang sudah admin (PIN benar), update tampilan halaman ini
+      setTimeout(() => {
+        if (isAdmin()) updateTampilan();
+      }, 100);
+    };
+
+    window.onload = function () {
+      applyDarkMode();
+      initDarkMode();
+      applyNamaDesa();
+      initOfflineDetection();
+      document.addEventListener("keydown", handlePinKey);
+      updateTampilan();
+      if (!isAdmin()) setTimeout(bukaModalPIN, 300);
+    };
+  </script>
+</body>
+</html>
