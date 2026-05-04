@@ -100,7 +100,7 @@
     function toggleAdminTarik() {
       if (isAdmin()) {
         if (confirm("Keluar dari mode Admin?")) {
-          sessionStorage.removeItem("adminUnlocked");
+          localStorage.removeItem("adminUnlocked");
           updateTampilan();
         }
       } else {
